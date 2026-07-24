@@ -1,0 +1,12 @@
+{
+  "name": "renidly-skills",
+  "owner": { "name": "Renidly" },
+  "description": "Renidly B2B professional-data API skills for Claude Code.",
+  "plugins": [
+    {
+      "name": "renidly",
+      "source": "./plugins/renidly",
+      "description": "Everything about the Renidly Data, Live, Email, and Account/Credits APIs — endpoints, params, auth, pagination, credits, batch jobs."
+    }
+  ]
+}
