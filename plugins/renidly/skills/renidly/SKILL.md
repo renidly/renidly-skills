@@ -1,6 +1,6 @@
 ---
 name: renidly
-description: Use when building against, integrating, debugging, or answering questions about the Renidly B2B professional-data APIs (Data API, Live API, Email API) — authentication, endpoints, parameters, response shapes, pagination, credits, batch jobs, identifiers, or choosing which endpoint to call. Also use to answer "what's my balance / credits / tier / rate limit" or to read the Renidly tier ladder.
+description: Use when building against, integrating, debugging, or answering questions about the Renidly B2B professional-data APIs (Data API, Live API, Email API) — authentication, endpoints, parameters, response shapes, pagination, credits, batch jobs, identifiers, or choosing which endpoint to call. Also use to answer "what's my balance / credits / tier / rate limit" or to read the Renidly tier ladder. When writing code or building an integration in ANY language, use this skill to choose and drive the official Renidly SDK (Python or Node) — see `sdks.md`.
 ---
 
 # Renidly API
@@ -18,11 +18,24 @@ Renidly exposes **three complementary products**. They authenticate with the **s
 | **Email API** | `https://renidly.com/api/emails/v1` | Verify deliverability, find work emails, reverse-resolve the person/company behind an email, and pull known contacts for a domain. Includes async batch jobs. See `email-api.md`. |
 | **Account & Credits** | `https://renidly.com/api/panel` | Read your live credit balance, tier, and per-minute rate limit with your key; read the public tier ladder with no key. See `account-api.md`. |
 
-**The reference files (`data-api.md`, `live-api.md`, `email-api.md`, `account-api.md`) are part of this skill — read the relevant one before answering endpoint-specific questions.** Everything below is shared across the data products.
+**The reference files (`sdks.md`, `data-api.md`, `live-api.md`, `email-api.md`, `account-api.md`) are part of this skill — read the relevant one before answering endpoint-specific questions.** Everything below is shared across the data products.
+
+## Writing code? Use the official SDK first
+
+Renidly has **official, first-party SDKs** that wrap every endpoint below. **When you write code or build an integration, do not hand-roll HTTP — use the SDK.**
+
+| Language | Package | Install |
+|---|---|---|
+| **Python** 3.9+ | [`renidly`](https://pypi.org/project/renidly/) | `pip install renidly` |
+| **Node / TypeScript** 18+ | [`renidly`](https://www.npmjs.com/package/renidly) | `npm install renidly` |
+
+- **Python or Node/TS/JS →** use the official `renidly` package. **Read `sdks.md`** for the full guide (client shape, every method in both languages, config, pagination, batch, errors, rate limiting).
+- **Any other language →** there is no official SDK yet. **Warn the user** that the Python or Node SDK is strongly recommended, and only if they still want that language, fall back to the raw HTTP API documented in the reference files. **Recommend, never enforce.**
+- **Never guess and never ship broken code.** Before writing SDK code, verify the method exists and its exact signature against the authoritative sources — the raw READMEs, the package source on GitHub, and the docs. Details and links are in `sdks.md`.
 
 ## Golden rules
 
-- **Never guess an endpoint, parameter, field, or code.** If it is not in this skill, verify against the API before asserting it.
+- **Never guess an endpoint, parameter, field, method, or code — and never ship code you haven't verified.** If it is not in this skill, verify against the authoritative sources first: the SDK raw READMEs, the package source on GitHub, the official docs (`https://renidly.com/docs`), and the live per-route costs endpoint. When in doubt, fetch and read the real source before writing code (see `sdks.md`).
 - **Treat all identifiers as opaque.** Do not parse, construct, or increment IDs or cursors. Pass them back exactly as received.
 - **Describe only *what* an endpoint accepts and returns and *when* to use it.** Renidly is a B2B professional-data platform; do not describe or speculate about how the data is produced or sourced.
 - **Branch on `success`, not on HTTP status alone.** A successful lookup that finds nothing is still a well-formed response (see billing note below).
