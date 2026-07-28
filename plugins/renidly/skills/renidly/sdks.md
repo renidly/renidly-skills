@@ -177,6 +177,8 @@ for await (const p of renidly.data.people.search({ title: "cto" })) {        // 
 // Explicit generator: (await renidly.data.people.search({title:"cto"})).autoPagingIter()
 ```
 
+Each page is a separate billed request — read its cost/balance off `page.meta.credit_consumed` / `page.meta.remaining_balance` (Python) · `page.meta.creditConsumed` / `page.meta.remainingBalance` (Node). See [Response objects & credit metadata](#response-objects--credit-metadata).
+
 ## Batch / async jobs
 
 Submit returns a job handle immediately; then wait (blocking) or stream. Up to 1000 items per job.
@@ -240,9 +242,36 @@ try {
 
 **Not-found single lookups:** `retrieve(...)` returns `None`/`null` by default (not an error). Set `raise_on_not_found`/`throwOnNotFound` to raise instead.
 
-## Response objects
+## Response objects & credit metadata
 
-Responses are dynamic and drill-able — access any field (nested included) directly; no schema classes needed. HTTP metadata is attached to every object: `last_response.status_code` / `last_response.request_id` (Python), `lastResponse.statusCode` / `lastResponse.requestId` (Node, non-enumerable). Prefer the raw envelope? Set `unwrap_data_obj:false` / `unwrapData:false`.
+Responses are dynamic and drill-able — access any field (nested included) directly; no schema classes needed. Prefer the raw envelope? Set `unwrap_data_obj:false` / `unwrapData:false`.
+
+Every result also carries a **`.meta`** object with the HTTP + billing metadata for the call that produced it. It's kept off the response data, so `person.headline` is your data and `person.meta.credit_consumed` is billing info (SDK **≥ 0.2.0**):
+
+| `.meta` field | Python | Node |
+|---|---|---|
+| **Credits charged for THIS request** | `meta.credit_consumed` | `meta.creditConsumed` |
+| **Balance remaining after the charge** | `meta.remaining_balance` | `meta.remainingBalance` |
+| HTTP status | `meta.status_code` | `meta.statusCode` |
+| Request id | `meta.request_id` | `meta.requestId` |
+| Raw response headers | `meta.headers` | `meta.headers` |
+| Parsed body envelope | `meta.body` | `meta.body` |
+| Raw response text | `meta.raw_body` | `meta.rawBody` |
+| Underlying HTTP response object | `meta.raw_http` (`httpx.Response`) | `meta.rawHttp` (fetch `Response`) |
+
+```python
+p = renidly.data.people.retrieve(handle="ryanroslansky")
+print(p.meta.credit_consumed, p.meta.remaining_balance)   # e.g. 1.0 19813.0
+```
+```ts
+const p = await renidly.data.people.retrieve({ handle: "ryanroslansky" });
+console.log(p.meta.creditConsumed, p.meta.remainingBalance); // e.g. 1 19813
+```
+
+- `.meta` is on **every** result — single objects, list pages, and each item in a page. In Node it's **non-enumerable** (won't show in `JSON.stringify`/`Object.keys`).
+- `credit_consumed`/`remaining_balance` are `None`/`undefined` when a route isn't credit-billed (e.g. `account.*`) or wasn't charged (errors, **cached hits**, zero-result billing). Result-billed endpoints report the real dynamic amount — e.g. `emails.prospects(...)` returning 18 emails → `meta.credit_consumed == 18`. Cached responses are served free → `0`.
+- During `auto_paging_iter()` / `for await`, each **page** is a separate billed request, so each item reflects **its own page's** `.meta`.
+- `.last_response` / `.lastResponse` remains as a **deprecated alias** for `.meta`.
 
 ## Automatic rate limiting
 
