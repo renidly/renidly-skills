@@ -85,6 +85,8 @@ curl https://renidly.com/api/panel/credits/balance/k/enterprise/ -H "X-AUTHAPI-K
 3. Report `data.balance`, `data.current_tier.name`, and `data.current_tier.limit_per_minute`; if `next_tier` isn't null, mention `next_tier.credits_needed` to reach the next tier.
 4. No key available and only the tier catalog is needed → the public `…/user/sub/tiers/` route (no key).
 
+> **Already using the SDK?** You don't need a separate balance call for the *current* balance — every SDK response carries it on `.meta`: `result.meta.remaining_balance` (Python) / `result.meta.remainingBalance` (Node) is the balance right after that call, and `result.meta.credit_consumed` / `creditConsumed` is what the call cost (SDK **≥ 0.2.0**). Use the dedicated `…/credits/balance/k/` endpoint (or `account.balance()`) when you need the balance *without* making another billable request. See `sdks.md`.
+
 ## Self-tuning rate limiter (the main use case)
 `limit_per_minute` is **tier-based** and shifts as your balance crosses tier boundaries, so a hardcoded value drifts out of sync (over-throttling or hitting `429`). Read the live value from `…/credits/tier/k/` and refresh periodically.
 

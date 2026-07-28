@@ -1,7 +1,7 @@
 {
   "name": "renidly",
   "description": "Reference skill for the Renidly B2B professional-data APIs (Data, Live, Email, Account & Credits).",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": { "name": "Renidly" },
   "homepage": "https://renidly.com"
 }

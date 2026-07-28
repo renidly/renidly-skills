@@ -108,6 +108,7 @@ Account routes live under `https://renidly.com/api/panel` and — unlike the dat
 - **"What's my tier / rate limit?"** → `GET /api/panel/credits/tier/k/` with `X-AUTHAPI-Key`. Read `data.current_tier.name`, `data.current_tier.limit_per_minute`, `data.balance`, and `data.next_tier.credits_needed`.
 - **Enterprise workspace balance** → `GET /api/panel/credits/balance/k/enterprise/` with the **Enterprise** key.
 - **The tier ladder, no key needed** → `GET /api/panel/user/sub/tiers/` (free, public).
+- **Already made an SDK call?** The post-call balance and cost are on the result's `.meta` — `meta.remaining_balance`/`meta.credit_consumed` (Python) · `meta.remainingBalance`/`meta.creditConsumed` (Node), SDK **≥ 0.2.0** — so you often don't need a separate balance request. See `sdks.md`.
 
 To actually answer a live balance/tier question, call the endpoint with the caller's API key (e.g. from `RENIDLY_API_KEY`), sent as `X-AUTHAPI-Key`, trailing slash kept.
 
