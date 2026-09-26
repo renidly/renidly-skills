@@ -17,7 +17,7 @@ so you get working code, not guesses.
 In Claude Code:
 
 ```
-/plugin marketplace add <your-github-username>/renidly-skills
+/plugin marketplace add https://github.com/renidly/renidly-skills
 /plugin install renidly@renidly-skills
 ```
 
