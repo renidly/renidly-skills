@@ -28,7 +28,7 @@ Then reload:
 ```
 
 The skill auto-activates on Renidly questions, or invoke it manually with
-`/renidly:renidly`.
+`/renidly`.
 
 ## Update
 
