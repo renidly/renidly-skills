@@ -195,6 +195,17 @@ Submit returns a job handle immediately; then wait (blocking) or stream. Up to 1
 
 Methods: `data.people.enrich_batch|enrichBatch`, `data.companies.enrich_batch|enrichBatch`, `emails.verify_batch|verifyBatch`, `emails.find_batch|findBatch`.
 
+Not a job: `live.people.enrich_bulk|enrichBulk` and `live.organizations.enrich_bulk|enrichBulk` (SDK ≥ 0.5.0) take up to 100 Live ids and return the records directly — `requested`, `count`, `profiles` / `organizations` (any order; match by `entityId` / `id`), `notFound`:
+
+```python
+b = renidly.live.people.enrich_bulk(["ACoAA…", "ACoAA…"])
+for p in b.profiles: print(p.entityId, p.firstName)
+```
+```ts
+const b = await renidly.live.people.enrichBulk(["ACoAA…", "ACoAA…"]);
+for (const p of b?.profiles ?? []) console.log(p.entityId, p.firstName);
+```
+
 **Python**
 ```python
 job = renidly.data.people.enrich_batch(handles=["ryanroslansky", "williamhgates"], live=True)

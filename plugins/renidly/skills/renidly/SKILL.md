@@ -151,13 +151,16 @@ Large workloads run as background jobs. Same three-step shape everywhere:
 
 Prefer batch over single calls whenever the work is a list (CRM/database hydration, imports, backfills, scheduled refreshes) rather than one lookup a user is waiting on.
 
+**Not a job: Live bulk enrich.** `GET /api/v2/person/enrich-bulk` (`entityIds`) and `GET /api/v2/organization/enrich-bulk` (`ids`) take up to 100 comma-separated Live ids and return every full record in the same response: no `job_id`, no polling. See `live-api.md`.
+
 ## Which endpoint? (quick decision guide)
 
 - **I have a stable ID or want consistent, queryable records at scale** → Data API (`data-api.md`).
 - **I need the freshest snapshot of one subject, its recent activity, related signals, or a discovery search** → Live API (`live-api.md`).
 - **I have an email / a name+domain / a profile URL and care about deliverability or the person behind an address** → Email API (`email-api.md`).
 - **I have a profile URL and want phone numbers, or a phone number and want the person** → Phone API (`phone-api.md`).
-- **I have a whole list to process** → the batch endpoints on the Data or Email API.
+- **I have a whole list to process** → the batch endpoints on the Data or Email API (async job, up to 1000, poll for results).
+- **I have up to 100 Live ids (`ACoAA…` entityIds / numeric org ids) and want full live profiles now** → Live bulk enrich (`live-api.md`): one request, everything in the response.
 - **I want my balance, tier, or live rate limit** → Account & Credits (`account-api.md`); the tier ladder and per-route costs need no key.
 - **I want to know what an endpoint costs** → `GET /api/panel/credits/routes/costs/` (public); absent from the list ⇒ 1 credit.
 - **I just want to check my key works without spending credits** → `GET /api/panel/credits/balance/k/` with `X-AUTHAPI-Key` (the `health` probes take no key, so they don't test it).
