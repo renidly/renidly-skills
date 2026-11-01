@@ -37,14 +37,14 @@ Discover a person's work email from their name and company domain.
 ## GET /find/linkedin
 Identify a person and their current company from a professional profile URL, then find their work email at that company.
 - **Params:** `url` (required — a professional profile URL or its bare public slug).
-- **Returns:** `email`, `found`, `catch_all`, `confidence`, plus resolved `first_name`, `last_name`, `domain`, `company`, and the normalized profile `url`.
+- **Returns:** `email`, `found`, `catch_all`, `confidence`, plus resolved `first_name`, `last_name`, `domain`, `company`, and the normalized `linkedin_url`. `domain` is empty (and `found` false) when the company has no website on file.
 - **Billed** per lookup (found or not). Cached.
 
 ## GET /reverse
 Resolve the person and company behind a **business** email address.
-- **Params:** `email` (required). **Professional working mailboxes only** — public providers (gmail/outlook/…), role accounts (`info@`, `support@`, …), disposable, relay, and invalid addresses are rejected with `422` before any work runs.
+- **Params:** `email` (required). Role accounts (`info@`, `support@`, …), disposable, relay, and invalid addresses are rejected with `422` before any work runs. A public-provider address (gmail/outlook/…) we already know resolves normally; one we don't know returns `found:false` (free).
 - **Returns:** `email`, `found` (bool), `confidence` (`high` | `medium` | `low` | `none`), `person` (object or null — full name, headline, summary, title, profile url, picture, location, industry, follower count, `is_premium`, `is_open_to_work`, `experience[]`, `education[]`), and `current_company` (object or null — name, slug, website, profile url, logo, description, industry, size, staff count, follower count, location, specialities).
-- **Billing:** full cost when a person **or** company is returned; partial (3 credits) when discovery ran but found nothing; free when the address is unsupported. Cached.
+- **Billing:** full cost when a person **or** company is returned; partial (**3 credits**) when a real search ran but found nothing; free when nothing was looked up (unknown public-provider address, or no search could start) and for `422`s. Cached.
 
 ## GET /prospects
 Page emails already known for a company domain.
@@ -59,17 +59,17 @@ Async, up to **1000** items per job; results pollable for **6 hours**. Submit pr
 
 ### POST /verify/batch  ·  GET /verify/batch
 - **Submit body:** `{ "emails": [ … ] }` — 1–1000 addresses; duplicates/blanks dropped.
-- **Track params:** `job_id` (required), `after` (result cursor, start 0). Returns `status` (`processing`|`completed`|`error`), `error`, `total`, `resolved`, `errors`, `next_cursor`, and `results` — an `email → { deliverable, reason, catch_all }` map (≤100 per page). Page by passing `next_cursor` back as `after` until it reaches `resolved`.
+- **Track params:** `job_id` (required), `after` (result cursor, start 0). Returns `status` (`processing`|`completed`|`error`), `error`, `total`, `resolved`, `errors`, `next_cursor`, and `results` — an `email → { email, deliverable, reason, catch_all }` map (≤100 per page). Page by passing `next_cursor` back as `after` until it reaches `resolved`.
 
 ### POST /find/batch  ·  GET /find/batch
 - **Submit body:** `{ "queries": [ { "first_name", "last_name", "domain" }, … ] }` — 1–1000; each field required; duplicates/incomplete dropped.
-- **Track params:** `job_id` (required), `after` (start 0). Returns the same job envelope; `results` is an array of `{ query, found, email }` (≤100 per page).
+- **Track params:** `job_id` (required), `after` (start 0). Returns the same job envelope; `results` is an array of `{ query, found, email }` (`email` present only when found; ≤100 per page).
 
 ---
 
 ## Email API notes & edge cases
 - **`domain` must be a bare hostname** (`acme.com`) — not `https://acme.com` or `user@acme.com`, and must contain a dot.
-- **Reverse is business-email-only** — public/role/disposable/relay/invalid → `422` (free, no work done). Everything else returns `200`; branch on `found`/`confidence`.
+- **Reverse** — role/disposable/relay/invalid → `422` (free, no work done). Everything else returns `200`; branch on `found`/`confidence`.
 - **Catch-all domains** are flagged `catch_all:true`; verify may return `risky` when a specific mailbox can't be confirmed, and find skips unresolvable catch-all domains rather than spend budget.
 - **Opt-out:** find/find-by-url/reverse return `403` (not charged) for opted-out people or addresses.
 - **Batch cursor** (`after`/`next_cursor`) is an integer offset into resolved results; poll until `next_cursor == resolved`. A verify job id polled on the find track endpoint (or vice-versa) returns `404`.

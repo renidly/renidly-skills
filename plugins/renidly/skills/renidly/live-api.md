@@ -2,7 +2,7 @@
 
 Base: `https://renidly.com/api/v2` · Auth: `X-renidly-apikey` header · Envelope, errors, credits: see `SKILL.md`.
 
-The Live API resolves a single B2B professional subject — a person, organization, job opportunity, or professional activity — or runs a discovery search, returning the freshest available snapshot on demand. Every endpoint is `GET`. Successful results carry `message: "Data retrieved successfully"` (or a per-endpoint message). A resolved-but-empty result returns `200` with a not-found message and is **not** billed. Identifiers are opaque strings — treat them as black boxes.
+The Live API resolves a single B2B professional subject — a person, organization, job opportunity, or professional activity — or runs a discovery search, returning the freshest available snapshot on demand. Every endpoint is `GET`. Successful results carry `message: "Data retrieved successfully"`. **Every response is HTTP `200`** — failures come back as `success:false` with a message (no `error_code`); branch on `success`. A not-found result **is billed** (a real lookup ran). There is no `/health` route. Identifiers are opaque strings — treat them as black boxes.
 
 ## Identifiers
 - **Person:** `entityId` (stable, preferred) or a public `handle` (convenience — resolve once, then reuse the `entityId`).
@@ -15,9 +15,10 @@ The Live API resolves a single B2B professional subject — a person, organizati
 | Group | Method & path | Purpose |
 |---|---|---|
 | Person | `GET /person/enrich` | Full profile for one professional |
+| Person | `GET /person/enrich-bulk` | Full profiles for up to 100 professionals |
 | Person | `GET /person/resolve-handle` | Public handle → stable `entityId` |
 | Person | `GET /person/employment-history` | Complete work history |
-| Person | `GET /person/endorsements` | Recommendations written for the person |
+| Person | `GET /person/endorsements` | Recommendations received and given |
 | Person | `GET /person/lookalikes` | Similar professional profiles |
 | Person | `GET /person/interests` | Entities the person follows |
 | Activity | `GET /activity/feed` | A person's recent posts / activity stream |
@@ -31,6 +32,7 @@ The Live API resolves a single B2B professional subject — a person, organizati
 | Opportunity | `GET /opportunity/hiring-team` | Hiring-team members for a posting |
 | Opportunity | `GET /opportunity/by-person` | Postings created by a person |
 | Organization | `GET /organization/enrich` | Full company profile |
+| Organization | `GET /organization/enrich-bulk` | Full profiles for up to 100 companies |
 | Organization | `GET /organization/headcount` | Employee-count distribution |
 | Organization | `GET /organization/similar` | Similar companies / peers |
 | Organization | `GET /organization/affiliated` | Affiliated / subsidiary pages |
@@ -45,16 +47,17 @@ The Live API resolves a single B2B professional subject — a person, organizati
 
 ## Person
 - **`GET /person/enrich`** — `entityId` **or** `handle` (at least one; `entityId` wins if both). Returns full profile: names, headline, follower/connection counts, flags (`isTopVoice`, `premium`, `influencer`, `openToWork`, `isHiring`), industry, images, and a structured `location`.
+- **`GET /person/enrich-bulk`** — `entityIds` (required, comma-separated, max 100). Full profiles for each. Billed per requested id; when nothing is delivered the whole charge is refunded.
 - **`GET /person/resolve-handle`** — `handle` (required). Returns the stable `entityId`. One-time resolution; reuse the id.
 - **`GET /person/employment-history`** — `entityId` (required). Returns full work history: organization name/id/url/logo, title, description, location, parsed start/end, skills, and parallel-position groupings.
-- **`GET /person/endorsements`** — `entityId` (required). Recommendations written for the person, each with author details and text. Use for trust signals / warm-intro paths.
+- **`GET /person/endorsements`** — `entityId` (required). Recommendations `received[]` and `given[]` with totals (`total`, `totalReceived`, `totalGiven`), each with author details and text. Use for trust signals / warm-intro paths.
 - **`GET /person/lookalikes`** — `entityId` (required). Similar profiles — expand a shortlist from one ideal example.
 - **`GET /person/interests`** — `entityId` (required). Entities the person follows (companies, groups, people, newsletters) with type + link. Use for personalization and audience insight.
 
 ## Activity
 - **`GET /activity/feed`** — `entityId` (required, person). `cursor` (opaque, preferred) or `start` (offset). Returns `activities[]` (id, url, text, author, timestamps, engagement counts, media, repost content) + `nextCursor`.
 - **`GET /activity/details`** — `entityId` (required, activity). Full post plus top-level comments and threaded replies.
-- **`GET /activity/reactions`** — `entityId` (required, activity). `start` (offset, **must be a multiple of 10**; other values → `400`). Returns reactor profiles + reaction type, `totalReactions`, page info.
+- **`GET /activity/reactions`** — `entityId` (required, activity). `start` (offset, **must be a multiple of 10**; other values → `success:false`, not charged). Returns reactor profiles + reaction type, `totalReactions`, page info.
 - **`GET /activity/replies`** — `entityId` (required, activity). `sortBy` (`relevance` default | `date_posted` = newest first). `count` (default 10). `start` (offset). Returns threaded comments.
 - **`GET /activity/replies/by-author`** — `entityId` (required, person). `cursor` or `start`. Comments authored by that person across posts + `nextCursor`.
 
@@ -67,6 +70,7 @@ The Live API resolves a single B2B professional subject — a person, organizati
 
 ## Organization
 - **`GET /organization/enrich`** — `id` (required, numeric). Full company profile: identifiers, tagline/description, type, images, staff count + range, HQ + all locations, industries, specialties, website, founded, follower count, funding data when available, plus related/affiliated/parent pages.
+- **`GET /organization/enrich-bulk`** — `ids` (required, comma-separated numeric ids, max 100). Full company profiles for each. Billed per requested id; when nothing is delivered the whole charge is refunded.
 - **`GET /organization/headcount`** — `id` (required). Employee-count total + distribution buckets (by department, seniority, location …). Use for sizing and structure signals.
 - **`GET /organization/similar`** — `id` (required). Similar companies / peers (id, name, industry, followers, url) + count.
 - **`GET /organization/affiliated`** — `id` (required). Affiliated/subsidiary/showcase pages + count. Maps the corporate family.
@@ -85,8 +89,9 @@ Multi-value filters are **comma-separated**; values within one parameter are OR'
 
 ## Live API notes & edge cases
 - **Resolve once, reuse.** Convert a handle/slug to its stable id via `person/resolve-handle` or `organization/resolve-slug`, cache it, and pass the id to every other call. Handles/slugs can change; ids don't.
-- **`start` on reactions must be a multiple of 10** (0, 10, 20…). Other list endpoints take any `start ≥ 0`, `count ≤ 50`.
+- **`start` on reactions must be a multiple of 10** (0, 10, 20…). Other limits vary: discover `start` 0–999 and `count` ≤ 50; `opportunity/by-person` `count` 1–25; `organization/opportunities` page size fixed at 50.
 - **Comma-separated filters** = OR within a parameter, AND across parameters (discovery endpoints).
 - **`sortBy=date_posted`** returns newest first.
-- **Not-found is `200` and free** (e.g. an unknown handle, a post with no reactions/comments) — branch on `success` and the message. Transient errors are retried and never charged.
+- **Not-found is `success:false` and billed** (e.g. an unknown handle, a post with no reactions/comments) — branch on `success` and the message. Exceptions: `opportunity/similar` and `opportunity/related-views` refund every failure, and the bulk enrich endpoints refund when nothing is delivered.
+- **Free:** validation errors (`success:false`, "validation error; Please recheck your inputs" with field `errors`, checked before any charge) and transient errors that exhaust server-side retries (refunded).
 - **Cursor vs offset:** `activity/feed` and `activity/replies/by-author` use opaque cursors (`nextCursor`); everything else uses `start`/`count`.

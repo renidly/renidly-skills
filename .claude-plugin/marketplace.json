@@ -6,7 +6,7 @@
     {
       "name": "renidly",
       "source": "./plugins/renidly",
-      "description": "Everything about the Renidly Data, Live, Email, and Account/Credits APIs — endpoints, params, auth, pagination, credits, batch jobs."
+      "description": "Everything about the Renidly Data, Live, Email, Phone, and Account/Credits APIs — endpoints, params, auth, pagination, credits, batch jobs."
     }
   ]
 }

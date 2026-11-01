@@ -20,7 +20,7 @@ Envelope is the shared shape (`success`, `message`, `errors`, `data`).
 | `GET /api/panel/credits/routes/costs/` | **No key** (free, public) | Per-route credit costs (only routes ≠ 1 credit) |
 | `GET /api/panel/credits/tier/k/` | `X-AUTHAPI-Key` | Current tier + rate limit + balance + neighbouring tiers |
 | `GET /api/panel/credits/balance/k/` | `X-AUTHAPI-Key` | Just the current credit balance |
-| `GET /api/panel/credits/balance/k/enterprise/` | Enterprise key | Balance for an Enterprise workspace |
+| `GET /api/panel/credits/balance/k/enterprise/` | Your key (Enterprise or regular) | Balance for an Enterprise workspace |
 
 ### GET /api/panel/user/sub/tiers/  — public tier catalog (no key)
 Lists every tier. Free, unauthenticated. Use to show pricing/limits or map a balance to a tier without a key.
@@ -50,9 +50,9 @@ curl https://renidly.com/api/panel/credits/routes/costs/
 ```
 `data`: `count`, and `routes[]` each with `route` (path), `title`, `description`, `credits_cost` (integer).
 
-- To answer "how much does endpoint X cost?": fetch this list, match `route` to X's path — if present, the cost is `credits_cost` (0 = free); if absent, it's **1 credit**.
+- To answer "how much does endpoint X cost?": fetch this list, match `route` to X's full path (e.g. `/api/v2/organization/enrich`) — if present, the cost is `credits_cost` (0 = free); if absent, it's **1 credit**.
 - **Base per-call cost only.** Some endpoints bill *per resolved item* on top of/instead of a base: batch submits and per-item endpoints show `0` here and charge as items resolve (see `data-api.md` / `email-api.md`), and `prospects` bills per email returned.
-- Snapshot of notable costs (illustrative — verify live): `emails/verify` = 2, `emails/find` = 3, `emails/find/linkedin` = 5, `emails/reverse` = 5, `organization/enrich` = 2, `discover/opportunities` = 2; health probes, batch submits, and skills lookups = 0 (free).
+- Snapshot of notable costs (illustrative — verify live): `emails/verify` = 2, `emails/find` = 3, `emails/find/linkedin` = 5, `emails/reverse` = 5, `organization/enrich` = 2, `discover/opportunities` = 2, `phones/find` = 5, `phones/reverse` = 5 (a phone lookup that returns nothing costs 1 or 0 — see `phone-api.md`); health probes, batch submits, and skills lookups = 0 (free).
 
 ### GET /api/panel/credits/tier/k/  — my tier + rate limit (authed)
 Call this to know your **rate limit at runtime**.
@@ -74,13 +74,13 @@ curl https://renidly.com/api/panel/credits/balance/k/ -H "X-AUTHAPI-Key: $RENIDL
 `data`: `{ "balance": <number> }`.
 
 ### GET /api/panel/credits/balance/k/enterprise/  — Enterprise balance
-Same as Balance but for an Enterprise workspace; authenticate with the **Enterprise** key (a Personal key returns `Invalid API key` here).
+Same as Balance, for an Enterprise workspace. A regular key is accepted here too.
 ```
 curl https://renidly.com/api/panel/credits/balance/k/enterprise/ -H "X-AUTHAPI-Key: $RENIDLY_ENTERPRISE_KEY"
 ```
 
 ## Answering "what's my balance / tier / rate limit"
-1. Use the caller's Renidly API key (env var like `RENIDLY_API_KEY`, or ask for it). For balance-only, call `…/credits/balance/k/`; for tier + rate limit, call `…/credits/tier/k/`. Enterprise workspace → the `…/enterprise/` route with the Enterprise key.
+1. Use the caller's Renidly API key (env var like `RENIDLY_API_KEY`, or ask for it). For balance-only, call `…/credits/balance/k/`; for tier + rate limit, call `…/credits/tier/k/`. Enterprise workspace → the `…/enterprise/` route.
 2. Send it as `X-AUTHAPI-Key` and keep the trailing slash.
 3. Report `data.balance`, `data.current_tier.name`, and `data.current_tier.limit_per_minute`; if `next_tier` isn't null, mention `next_tier.credits_needed` to reach the next tier.
 4. No key available and only the tier catalog is needed → the public `…/user/sub/tiers/` route (no key).

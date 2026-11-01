@@ -10,7 +10,7 @@ Renidly ships **official, first-party SDKs** that wrap every endpoint in this sk
 ## Language policy (follow exactly)
 
 1. **Building in Python or Node/TS/JS?** Use the official `renidly` package. Never write raw `requests`/`fetch`/`axios` calls against the API when the SDK covers it.
-2. **Building in another language (Go, Ruby, PHP, Java, …)?** There is no official SDK yet. **Warn the user**: *"Renidly has official Python and Node SDKs; if you can use one of those, it's strongly recommended for reliability and support. Otherwise I'll call the HTTP API directly."* Then — only if they confirm — implement against the raw HTTP API using the reference files in this skill (`data-api.md`, `live-api.md`, `email-api.md`, `account-api.md`). **Never enforce** a language; just recommend.
+2. **Building in another language (Go, Ruby, PHP, Java, …)?** There is no official SDK yet. **Warn the user**: *"Renidly has official Python and Node SDKs; if you can use one of those, it's strongly recommended for reliability and support. Otherwise I'll call the HTTP API directly."* Then — only if they confirm — implement against the raw HTTP API using the reference files in this skill (`data-api.md`, `live-api.md`, `email-api.md`, `phone-api.md`, `account-api.md`). **Never enforce** a language; just recommend.
 3. **Same data constraints as the rest of this skill.** Renidly is a B2B professional-data platform. Describe only what methods accept and return — never how the data is produced or sourced.
 
 ## NEVER guess — verify against the real source
@@ -88,14 +88,14 @@ The key is a positional arg, a config field, or the `RENIDLY_API_KEY` env var.
 | Empty lookup → error vs null | `raise_on_not_found` | `throwOnNotFound` | `false` |
 | Map failures to typed errors | `raise_on_api_error` | `throwOnApiError` | `true` |
 | Client-side rate limiting | `auto_rate_limit` | `autoRateLimit` | `false` |
-| Fixed per-minute limit (enterprise) | `rate_limit_per_minute` | `rateLimitPerMinute` | — |
+| Fixed per-minute limit (overrides the fetched one) | `rate_limit_per_minute` | `rateLimitPerMinute` | — |
 | Target fraction of limit | `rate_limit_safety` | `rateLimitSafety` | 1.0 |
 
 **Per-request override** (multi-tenant, custom timeout): pass `options` as the last argument to any method — `options={"api_key": "...", "timeout": 5}` (Python) / `{ apiKey: "...", timeout: 5000 }` (Node).
 
 ## Full method map (verified against source — confirm before use)
 
-Namespaces: `renidly.data`, `renidly.live`, `renidly.emails`, `renidly.account`.
+Namespaces: `renidly.data`, `renidly.live`, `renidly.emails`, `renidly.phones` (SDK **≥ 0.4.0**), `renidly.account`.
 
 ### `data` — clean, queryable records
 | Method | Python | Node |
@@ -142,6 +142,14 @@ Namespaces: `renidly.data`, `renidly.live`, `renidly.emails`, `renidly.account`.
 | Prospects for a domain | `emails.prospects(domain, kind, cursor=…)` | `emails.prospects(domain, kind, { cursor })` |
 | Bulk verify | `emails.verify_batch([…])` | `emails.verifyBatch([…])` |
 | Bulk find | `emails.find_batch([{…}])` | `emails.findBatch([{…}])` |
+
+### `phones` — phone numbers from a profile, the person behind a number (SDK ≥ 0.4.0)
+| Method | Python | Node |
+|---|---|---|
+| Phone numbers from a profile URL or username | `phones.find(url)` | `phones.find(url)` |
+| People behind a number | `phones.reverse(phone, country=…)` | `phones.reverse(phone, { country })` |
+
+Both resolve the result object (`found` plus `person`/`phones` or `candidates`); a miss is `found: false`, not an error. An opted-out profile raises `PermissionDeniedError`.
 
 ### `account` — balance, tier, pricing
 | Method | Python | Node |
@@ -216,7 +224,7 @@ Every failure raises (Python) / rejects (Node) with a specific subclass of `Reni
 | `PermissionDeniedError` | key valid but not allowed here (premium-gated / opted-out) |
 | `InvalidRequestError` | bad input — read `field_errors` / `fieldErrors` |
 | `InsufficientCreditsError` | not enough credits |
-| `NotFoundError` | batch job not found / expired |
+| `NotFoundError` | a lookup found nothing (only when `raise_on_not_found`/`throwOnNotFound` is on) · batch job not found / expired |
 | `RateLimitError` | per-minute limit hit — `tier`, `limit`, `retry_after`/`retryAfter` |
 | `ServiceUnavailableError` | transient — retry shortly |
 | `APIConnectionError` | network / timeout |
@@ -275,7 +283,7 @@ console.log(p.meta.creditConsumed, p.meta.remainingBalance); // e.g. 1 19813
 
 ## Automatic rate limiting
 
-Turn on `auto_rate_limit`/`autoRateLimit` and the SDK stays under your per-minute limit with a sliding 60-second window. Regular keys read the limit from your tier automatically; **enterprise keys require `rate_limit_per_minute`/`rateLimitPerMinute`.**
+Turn on `auto_rate_limit`/`autoRateLimit` and the SDK stays under your per-minute limit with a sliding 60-second window. The limit is read from your account automatically (enterprise accounts included, SDK ≥ 0.2.1); `rate_limit_per_minute`/`rateLimitPerMinute` overrides it. If the limit can't be determined the SDK warns and skips client-side throttling (server `429`s are still retried).
 
 ## Escape hatch
 
