@@ -98,7 +98,7 @@ Key behaviors:
 ## Credits & rate limits
 
 - Costs are **per endpoint** and per successful call; simple reference lookups are cheap, richer resolutions cost more. **Exact per-route costs: `GET https://renidly.com/api/panel/credits/routes/costs/` (public, no key).** It lists only routes whose cost ≠ 1 — **any route not listed costs 1 credit**, and `credits_cost: 0` means free. (Batch/per-item endpoints show 0 base and bill per resolved item.) See `account-api.md`.
-- **Cache is transparent and free.** Identical repeat requests (same inputs) are served from a short-lived cache at no cost and near-zero latency; a miss runs the real resolution and is billed. Only successful responses are cached — a not-found is billed again on every repeat. Never cached: the Phone API and batch job tracking. You do not choose cached vs live — it's automatic per call.
+- **Cache is transparent and free.** Identical repeat requests (same inputs) are served from a short-lived cache at no cost and near-zero latency; a miss runs the real resolution and is billed. Only `success:true` responses are cached — a not-found returned as `success:false` is billed again on every repeat (Phone API `found:false` is `success:true`, so it is cached). Never cached: batch job tracking. You do not choose cached vs live — it's automatic per call.
 - **Rate limits are per-minute and tier-based.** Exceeding them returns `429` with your tier/limit in `errors`. Upgrade tier to raise the ceiling.
 
 ### Reading balance, tier & rate limit (Account & Credits)

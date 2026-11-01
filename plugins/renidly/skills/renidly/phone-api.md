@@ -2,7 +2,7 @@
 
 Base: `https://renidly.com/api/phones/v1` · Auth: `X-renidly-apikey` header · Envelope, errors, credits: see `SKILL.md`.
 
-The Phone API returns a professional's phone numbers from their profile URL, and resolves the professional behind a phone number. Responses are **never cached**: every call runs live and is billed by its outcome. People who opted out are never returned. There is no `/health` route.
+The Phone API returns a professional's phone numbers from their profile URL, and resolves the professional behind a phone number. Successful responses — including `found:false` — are cached briefly: an identical repeat call is served from cache, free. People who opted out are never returned. There is no `/health` route.
 
 ## Endpoint index
 
