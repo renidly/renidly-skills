@@ -118,6 +118,7 @@ Namespaces: `renidly.data`, `renidly.live`, `renidly.emails`, `renidly.phones` (
 | Method | Python | Node |
 |---|---|---|
 | Person enrich | `live.people.enrich(entity_id=…, handle=…)` | `live.people.enrich({ entityId, handle })` |
+| Person bulk enrich (≤100, SDK ≥ 0.5.0) | `live.people.enrich_bulk([entity_id, …])` | `live.people.enrichBulk([entityId, …])` |
 | Resolve handle → entityId | `live.people.resolve_handle(handle)` | `live.people.resolveHandle(handle)` |
 | Employment history | `live.people.employment_history(entity_id)` | `live.people.employmentHistory(entityId)` |
 | Endorsements / lookalikes / interests | `live.people.endorsements|lookalikes|interests(entity_id)` | `live.people.endorsements|lookalikes|interests(entityId)` |
@@ -127,6 +128,7 @@ Namespaces: `renidly.data`, `renidly.live`, `renidly.emails`, `renidly.phones` (
 | Opportunity similar / related_views / hiring_team | `live.opportunities.similar|related_views|hiring_team(opportunity_entity_id)` | `live.opportunities.similar|relatedViews|hiringTeam(opportunityEntityId)` |
 | Opportunities by person | `live.opportunities.by_person(person_entity_id, …)` | `live.opportunities.byPerson(personEntityId, …)` |
 | Org enrich / headcount | `live.organizations.enrich(id)` · `live.organizations.headcount(id)` | `live.organizations.enrich(id)` · `live.organizations.headcount(id)` |
+| Org bulk enrich (≤100, SDK ≥ 0.5.0) | `live.organizations.enrich_bulk([id, …])` | `live.organizations.enrichBulk([id, …])` |
 | Org similar / affiliated / activities | `live.organizations.similar|affiliated|activities(id, …)` | `live.organizations.similar|affiliated|activities(id, …)` |
 | Resolve slug → id | `live.organizations.resolve_slug(slug)` | `live.organizations.resolveSlug(slug)` |
 | Org opportunities | `live.organizations.opportunities(organization_entity_ids, …)` | `live.organizations.opportunities(organizationEntityIds, …)` |

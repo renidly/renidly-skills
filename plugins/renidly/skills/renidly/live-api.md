@@ -47,7 +47,7 @@ The Live API resolves a single B2B professional subject — a person, organizati
 
 ## Person
 - **`GET /person/enrich`** — `entityId` **or** `handle` (at least one; `entityId` wins if both). Returns full profile: names, headline, follower/connection counts, flags (`isTopVoice`, `premium`, `influencer`, `openToWork`, `isHiring`), industry, images, and a structured `location`.
-- **`GET /person/enrich-bulk`** — `entityIds` (required, comma-separated, max 100). Full profiles for each. Billed per requested id; when nothing is delivered the whole charge is refunded.
+- **`GET /person/enrich-bulk`** — `entityIds` (required, comma-separated, max 100). Returns `requested` (unique ids), `count`, `profiles` (same shape as `/person/enrich`, in any order — match by `entityId`) and `notFound`. Duplicates are collapsed. Billed per unique id, found or not; one malformed id rejects the whole batch, free; when nothing is delivered the whole charge is refunded.
 - **`GET /person/resolve-handle`** — `handle` (required). Returns the stable `entityId`. One-time resolution; reuse the id.
 - **`GET /person/employment-history`** — `entityId` (required). Returns full work history: organization name/id/url/logo, title, description, location, parsed start/end, skills, and parallel-position groupings.
 - **`GET /person/endorsements`** — `entityId` (required). Recommendations `received[]` and `given[]` with totals (`total`, `totalReceived`, `totalGiven`), each with author details and text. Use for trust signals / warm-intro paths.
@@ -70,7 +70,7 @@ The Live API resolves a single B2B professional subject — a person, organizati
 
 ## Organization
 - **`GET /organization/enrich`** — `id` (required, numeric). Full company profile: identifiers, tagline/description, type, images, staff count + range, HQ + all locations, industries, specialties, website, founded, follower count, funding data when available, plus related/affiliated/parent pages.
-- **`GET /organization/enrich-bulk`** — `ids` (required, comma-separated numeric ids, max 100). Full company profiles for each. Billed per requested id; when nothing is delivered the whole charge is refunded.
+- **`GET /organization/enrich-bulk`** — `ids` (required, comma-separated numeric ids, max 100). Returns `requested`, `count`, `organizations` (same shape as `/organization/enrich`, in any order — match by `id`) and `notFound`. Duplicates are collapsed. Each unique id costs the same as one `/organization/enrich`, found or not; one malformed id rejects the whole batch, free; when nothing is delivered the whole charge is refunded.
 - **`GET /organization/headcount`** — `id` (required). Employee-count total + distribution buckets (by department, seniority, location …). Use for sizing and structure signals.
 - **`GET /organization/similar`** — `id` (required). Similar companies / peers (id, name, industry, followers, url) + count.
 - **`GET /organization/affiliated`** — `id` (required). Affiliated/subsidiary/showcase pages + count. Maps the corporate family.
